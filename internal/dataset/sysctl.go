@@ -1,42 +1,12 @@
-package main
+package dataset
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 )
-
-var fields = []string{
-	"nunlinked",
-	"nunlinks",
-	"nread",
-	"reads",
-	"nwritten",
-	"writes",
-}
-
-var (
-	zpool_stats = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "fsrv_bsd_userland_version",
-		Help: "version of the FreeBSD userland",
-	})
-)
-
-type Dataset struct {
-	Name       string
-	ObjectID   string
-	ObjectPath []string
-	Values     map[string]uint64
-}
-
-type State struct {
-	Datasets []Dataset
-}
 
 func (ds *Dataset) getStringValue(key string) (string, error) {
 	key = strings.Join(append(ds.ObjectPath, key), ".")
@@ -65,7 +35,7 @@ func (ds *Dataset) parseValues() {
 	}
 }
 
-func detectDatasets(pool string) []Dataset {
+func DetectDatasets(pool string) []Dataset {
 	validator := regexp.MustCompile(`^^kstat\.zfs\.\w*\.dataset\.objset-\w*\.dataset_name\:\s\S*`)
 	var outList []Dataset
 	out, err := exec.Command("/sbin/sysctl", "-it", "kstat.zfs."+pool).Output()
@@ -83,15 +53,4 @@ func detectDatasets(pool string) []Dataset {
 		}
 	}
 	return outList
-}
-
-func (st *State) RefreshDatasets(pools ...string) {
-	for _, pool := range pools {
-		st.Datasets = detectDatasets(pool)
-	}
-}
-
-func main() {
-	s := new(State)
-	s.RefreshDatasets("tank")
 }
