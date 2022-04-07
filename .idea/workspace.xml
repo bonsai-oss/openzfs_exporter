@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6a4904b5-1962-47a0-b7a4-8cbf3612e43c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/cmd/openzfs_exporter/flags.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cmd/openzfs_exporter/metrics.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/openzfs_exporter/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/openzfs_exporter/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/openzfs_exporter/refresh.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/openzfs_exporter/refresh.go" afterDir="false" />
-    </list>
+    <list default="true" id="6a4904b5-1962-47a0-b7a4-8cbf3612e43c" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
