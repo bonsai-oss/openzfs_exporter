@@ -10,10 +10,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"time"
 )
 
 // webListener - web server to access the metrics
-func (app application) webListener() {
+func (app *application) webListener() {
 	http.Handle("/metrics", promhttp.Handler())
 	if err := app.server.ListenAndServe(); err != nil {
 		log.Println(err)
@@ -23,30 +24,32 @@ func (app application) webListener() {
 var (
 	app = application{}
 
-	zpool_stats = promauto.NewGauge(prometheus.GaugeOpts{
+	zpool_stats = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "fsrv_bsd_userland_version",
 		Help: "version of the FreeBSD userland",
-	})
+	}, []string{"name", "node"})
 )
 
 type application struct {
 	listenAddress string
 	exportedPools arrayFlags
 	server        *http.Server
+	interval      time.Duration
 }
 
 type arrayFlags []string
 
-func (i *arrayFlags) String() string {
+func (af *arrayFlags) String() string {
 	return "my string representation"
 }
 
-func (i *arrayFlags) Set(value string) error {
-	*i = append(*i, value)
+func (af *arrayFlags) Set(value string) error {
+	*af = append(*af, value)
 	return nil
 }
 
 func init() {
+	flag.DurationVar(&app.interval, "interval", 5*time.Second, "refresh interval for metrics")
 	flag.StringVar(&app.listenAddress, "web.listen-address", ":8080", "address listening on")
 	flag.Var(&app.exportedPools, "exported-pools", "address listening on")
 	flag.Parse()
@@ -61,9 +64,27 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
 
+	ctx, cancelWorkers := context.WithCancel(context.Background())
+	done := make(chan interface{})
+
 	go app.webListener()
 
+	startedWorkers := len(app.exportedPools) - 1
+	stoppedWorkers := 0
+	for _, pool := range app.exportedPools {
+		go app.refreshWorker(ctx, done, pool)
+	}
+
 	<-sigChan
+
+	cancelWorkers()
+
+	for range done {
+		if stoppedWorkers == startedWorkers {
+			break
+		}
+		stoppedWorkers++
+	}
 
 	if err := app.server.Shutdown(context.Background()); err != nil {
 		log.Println(err)
