@@ -8,11 +8,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// refreshWorker queries the given zpool for datasets and sets the dataset parameters to metrics
 func (app *application) refreshWorker(ctx context.Context, done chan<- interface{}, pool string) {
 	var sleepCounter int
 	for {
 		select {
 		case <-ctx.Done():
+			// write to `done` interface to declare worker as finished
 			done <- nil
 			return
 		default:
@@ -26,7 +28,7 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 				for key, value := range ds.Parameter {
 					zpoolStats.With(
 						prometheus.Labels{
-							MetricLabelName:      ds.Name,
+							MetricLabelDataset:   ds.Name,
 							MetricLabelPool:      pool,
 							MetricLabelParameter: key,
 						},
