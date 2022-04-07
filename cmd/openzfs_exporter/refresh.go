@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"openzfs_exporter/internal/dataset"
 	"time"
 
@@ -34,7 +33,7 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 					).Set(float64(value))
 				}
 			}
-			fmt.Println(pool, time.Since(st))
+			queryTime.With(prometheus.Labels{MetricLabelPool: pool}).Add(time.Since(st).Seconds())
 			sleepCounter = 0
 		}
 		sleepCounter++

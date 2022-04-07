@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"openzfs_exporter/internal/pool"
 	"os"
 	"os/signal"
 	"time"
@@ -34,20 +35,31 @@ var (
 
 	zpoolStats = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "openzfs",
-		Name:      "zpool_parameters",
-		Help:      "sysctl openzfs parameters",
+		Subsystem: "zfs",
+		Name:      "zfs_parameters",
+		Help:      "sysctl openzfs dataset parameters",
 	}, []string{
 		MetricLabelPool,
 		MetricLabelName,
 		MetricLabelParameter,
 	})
+
+	queryTime = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "openzfs",
+		Subsystem: "exporter",
+		Name:      "query_seconds_total",
+		Help:      "time spent to gather parameters",
+	}, []string{
+		MetricLabelPool,
+	})
 )
 
 type application struct {
-	listenAddress string
-	exportedPools arrayFlags
-	server        *http.Server
-	interval      time.Duration
+	listenAddress    string
+	exportedPools    arrayFlags
+	server           *http.Server
+	interval         time.Duration
+	useAutodiscovery bool
 }
 
 type arrayFlags []string
@@ -64,12 +76,29 @@ func (af *arrayFlags) Set(value string) error {
 func init() {
 	flag.DurationVar(&app.interval, "interval", 5*time.Second, "refresh interval for metrics")
 	flag.StringVar(&app.listenAddress, "web.listen-address", ":8080", "address listening on")
+	flag.BoolVar(&app.useAutodiscovery, "discover-pools", false, "use autodiscovery for zfs pools")
 	flag.Var(&app.exportedPools, "exported-pools", "address listening on")
 	flag.Parse()
 
+	// create http server and assign address
 	app.server = &http.Server{
 		Handler: nil,
 		Addr:    app.listenAddress,
+	}
+
+	// autodiscovery mode
+	if app.useAutodiscovery {
+		pools, err := pool.Discover()
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, pool := range pools {
+			app.exportedPools = append(app.exportedPools, pool.Name)
+		}
+	}
+
+	if len(app.exportedPools) == 0 {
+		log.Fatalln("no pools to check")
 	}
 }
 
@@ -84,7 +113,9 @@ func main() {
 
 	startedWorkers := len(app.exportedPools) - 1
 	stoppedWorkers := 0
+
 	for _, pool := range app.exportedPools {
+		log.Printf("monitoring pool %+q\n", pool)
 		go app.refreshWorker(ctx, done, pool)
 	}
 
