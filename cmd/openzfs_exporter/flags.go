@@ -1,11 +1,9 @@
 package main
 
-import "fmt"
-
 type arrayFlags []string
 
 func (af *arrayFlags) String() string {
-	return fmt.Sprintf("%+v", af)
+	return ""
 }
 
 func (af *arrayFlags) Set(value string) error {
