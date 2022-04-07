@@ -3,18 +3,26 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+const (
+	MetricLabelName      = "name"
+	MetricLabelPool      = "pool"
+	MetricLabelParameter = "parameter"
 )
 
 // webListener - web server to access the metrics
 func (app *application) webListener() {
+	log.Printf("listening on %+q", app.listenAddress)
 	http.Handle("/metrics", promhttp.Handler())
 	if err := app.server.ListenAndServe(); err != nil {
 		log.Println(err)
@@ -24,10 +32,15 @@ func (app *application) webListener() {
 var (
 	app = application{}
 
-	zpool_stats = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "fsrv_bsd_userland_version",
-		Help: "version of the FreeBSD userland",
-	}, []string{"name", "node"})
+	zpoolStats = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "openzfs",
+		Name:      "zpool_parameters",
+		Help:      "sysctl openzfs parameters",
+	}, []string{
+		MetricLabelPool,
+		MetricLabelName,
+		MetricLabelParameter,
+	})
 )
 
 type application struct {

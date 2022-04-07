@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
 	"openzfs_exporter/internal/dataset"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func (app *application) refreshWorker(ctx context.Context, done chan<- interface{}, pool string) {
@@ -20,12 +21,20 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 				break
 			}
 			datasets := dataset.DetectDatasets(pool)
+			st := time.Now()
 			for _, ds := range datasets {
-
-				// TODO: make loop for dataset values
-				zpool_stats.With(prometheus.Labels{"name": ds.Name, "node": ds.Name})
+				ds.ParseValues()
+				for key, value := range ds.Parameter {
+					zpoolStats.With(
+						prometheus.Labels{
+							MetricLabelName:      ds.Name,
+							MetricLabelPool:      pool,
+							MetricLabelParameter: key,
+						},
+					).Set(float64(value))
+				}
 			}
-			fmt.Println(pool)
+			fmt.Println(pool, time.Since(st))
 			sleepCounter = 0
 		}
 		sleepCounter++

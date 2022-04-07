@@ -29,9 +29,9 @@ func (ds *Dataset) getUint64Value(key string) (uint64, error) {
 	return number, nil
 }
 
-func (ds *Dataset) parseValues() {
+func (ds *Dataset) ParseValues() {
 	for _, field := range fields {
-		ds.Values[field], _ = ds.getUint64Value(field)
+		ds.Parameter[field], _ = ds.getUint64Value(field)
 	}
 }
 
@@ -48,7 +48,7 @@ func DetectDatasets(pool string) []Dataset {
 			parts := strings.Split(line, ".")
 			ds := Dataset{ObjectID: parts[4], ObjectPath: parts[:5]}
 			ds.Name, _ = ds.getStringValue("dataset_name")
-			ds.Values = make(map[string]uint64)
+			ds.Parameter = make(map[string]uint64)
 			outList = append(outList, ds)
 		}
 	}
