@@ -29,7 +29,7 @@ func (ds *Dataset) getUint64Value(key string) (uint64, error) {
 	return number, nil
 }
 
-func (ds *Dataset) ParseValues() {
+func (ds *Dataset) ParseParameters() {
 	for _, field := range fields {
 		ds.Parameter[field], _ = ds.getUint64Value(field)
 	}

@@ -24,8 +24,15 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 			datasets := dataset.DetectDatasets(pool)
 			st := time.Now()
 			for _, ds := range datasets {
-				ds.ParseValues()
+				// apply query filter
+				if app.poolFilter.MatchString(ds.Name) == app.reverseFilter {
+					continue
+				}
+
+				// read parameter values
+				ds.ParseParameters()
 				for key, value := range ds.Parameter {
+					// assign parameters and values to corresponding metrics
 					zpoolStats.With(
 						prometheus.Labels{
 							MetricLabelDataset:   ds.Name,
@@ -35,6 +42,7 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 					).Set(float64(value))
 				}
 			}
+			// add spent query time to corresponding metric
 			queryTime.With(prometheus.Labels{MetricLabelPool: pool}).Add(time.Since(st).Seconds())
 			sleepCounter = 0
 		}
