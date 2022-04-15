@@ -47,6 +47,6 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 			sleepCounter = 0
 		}
 		sleepCounter++
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Second)
 	}
 }

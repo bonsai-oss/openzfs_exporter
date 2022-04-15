@@ -8,9 +8,13 @@ import (
 	"strings"
 )
 
+const (
+	SYSCTL = "/sbin/sysctl"
+)
+
 func (ds *Dataset) getStringValue(key string) (string, error) {
 	key = strings.Join(append(ds.ObjectPath, key), ".")
-	out, err := exec.Command("/sbin/sysctl", "-nq", key).Output()
+	out, err := exec.Command(SYSCTL, "-nq", key).Output()
 	if err != nil {
 		return "", err
 	}
@@ -38,7 +42,7 @@ func (ds *Dataset) ParseParameters() {
 func DetectDatasets(pool string) []Dataset {
 	validator := regexp.MustCompile(`^^kstat\.zfs\.\w*\.dataset\.objset-\w*\.dataset_name\:\s\S*`)
 	var outList []Dataset
-	out, err := exec.Command("/sbin/sysctl", "-it", "kstat.zfs."+pool).Output()
+	out, err := exec.Command(SYSCTL, "-it", "kstat.zfs."+pool).Output()
 	if err != nil {
 		log.Fatal(err)
 	}

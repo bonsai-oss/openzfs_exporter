@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"openzfs_exporter/internal/pool"
@@ -10,6 +11,8 @@ import (
 	"os/signal"
 	"regexp"
 	"time"
+
+	"golang.fsrv.services/version"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -40,6 +43,8 @@ var app = application{}
 
 func init() {
 	var poolMatchRaw string
+	var printVersion bool
+
 	// parse command line flags
 	flag.DurationVar(&app.interval, "interval", 5*time.Second, "refresh interval for metrics")
 	flag.StringVar(&app.listenAddress, "web.listen-address", ":8080", "address listening on")
@@ -48,7 +53,15 @@ func init() {
 
 	flag.StringVar(&poolMatchRaw, "filter", `^.*$`, "filter queried datasets")
 	flag.BoolVar(&app.reverseFilter, "filter-reverse", false, "reverse filter functionality; if set, only not matching datasets would be exported")
+
+	flag.BoolVar(&printVersion, "version", false, "print binary version")
 	flag.Parse()
+
+	// version handling
+	if printVersion {
+		fmt.Println(version.Print("openzfs_exporter"))
+		os.Exit(0)
+	}
 
 	// create http server and assign address
 	app.server = &http.Server{
