@@ -35,26 +35,29 @@ func (ds *Dataset) getUint64Value(key string) (uint64, error) {
 
 func (ds *Dataset) ParseParameters() {
 	for _, field := range fields {
+		ds.Mutex.Lock()
 		ds.Parameter[field], _ = ds.getUint64Value(field)
+		ds.Mutex.Unlock()
 	}
 }
 
-func DetectDatasets(pool string) []Dataset {
-	validator := regexp.MustCompile(`^^kstat\.zfs\.\w*\.dataset\.objset-\w*\.dataset_name\:\s\S*`)
-	var outList []Dataset
+func DetectDatasets(pool string) []*Dataset {
+	validator := regexp.MustCompile(`^kstat\.zfs\.\w*\.dataset\.objset-\w*\.dataset_name:\s\S*`)
+	var outList []*Dataset
 	out, err := exec.Command(SYSCTL, "-it", "kstat.zfs."+pool).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
 	lines := strings.Split(string(out), "\n")
 	for _, line := range lines {
-		if validator.MatchString(line) {
-			parts := strings.Split(line, ".")
-			ds := Dataset{ObjectID: parts[4], ObjectPath: parts[:5]}
-			ds.Name, _ = ds.getStringValue("dataset_name")
-			ds.Parameter = make(map[string]uint64)
-			outList = append(outList, ds)
+		if !validator.MatchString(line) {
+			continue
 		}
+		parts := strings.Split(line, ".")
+		ds := Dataset{ObjectID: parts[4], ObjectPath: parts[:5]}
+		ds.Name, _ = ds.getStringValue("dataset_name")
+		ds.Parameter = make(map[string]uint64)
+		outList = append(outList, &ds)
 	}
 	return outList
 }

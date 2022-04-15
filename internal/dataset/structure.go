@@ -1,5 +1,7 @@
 package dataset
 
+import "sync"
+
 var fields = []string{
 	"nunlinked",
 	"nunlinks",
@@ -14,4 +16,5 @@ type Dataset struct {
 	ObjectID   string
 	ObjectPath []string
 	Parameter  map[string]uint64
+	Mutex      sync.Mutex
 }

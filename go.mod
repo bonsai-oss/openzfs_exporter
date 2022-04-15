@@ -1,4 +1,4 @@
-module openzfs_exporter
+module golang.fsrv.services/openzfs_exporter
 
 go 1.16
 

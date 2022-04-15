@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 const (
@@ -12,7 +11,7 @@ const (
 )
 
 var (
-	zpoolStats = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	metricZfsParameter = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "openzfs",
 		Subsystem: "zfs",
 		Name:      "parameter",
@@ -23,12 +22,19 @@ var (
 		MetricLabelParameter,
 	})
 
-	queryTime = promauto.NewCounterVec(prometheus.CounterOpts{
+	metricExporterQueryDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "openzfs",
 		Subsystem: "exporter",
-		Name:      "query_seconds_total",
-		Help:      "time spent to gather parameters",
+		Name:      "query_duration_seconds",
+		Buckets:   []float64{0.05, 0.07, 0.09, 0.1, 0.12, 0.14, 0.17, 0.2, 0.25, 0.3, 0.5, 0.7},
 	}, []string{
 		MetricLabelPool,
 	})
 )
+
+func init() {
+	prometheus.MustRegister(
+		metricZfsParameter,
+		metricExporterQueryDuration,
+	)
+}

@@ -6,21 +6,24 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"openzfs_exporter/internal/pool"
 	"os"
 	"os/signal"
 	"regexp"
 	"time"
 
-	"golang.fsrv.services/version"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"golang.fsrv.services/openzfs_exporter/internal/pool"
+	"golang.fsrv.services/version"
 )
 
 // webListener - web server to access the metrics
 func (app *application) webListener() {
 	log.Printf("listening on %+q", app.listenAddress)
+
+	// set http server routes
+	http.Handle("/", http.RedirectHandler("/metrics", http.StatusPermanentRedirect))
 	http.Handle("/metrics", promhttp.Handler())
+
 	if err := app.server.ListenAndServe(); err != nil {
 		log.Println(err)
 	}
@@ -107,7 +110,7 @@ func main() {
 
 	// start one worker per pool
 	for _, p := range app.exportedPools {
-		log.Printf("monitoring p %+q\n", p)
+		log.Printf("monitoring pool %+q\n", p)
 		go app.refreshWorker(ctx, done, p)
 	}
 

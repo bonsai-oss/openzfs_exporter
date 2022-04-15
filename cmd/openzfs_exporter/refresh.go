@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"openzfs_exporter/internal/dataset"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	dsi "golang.fsrv.services/openzfs_exporter/internal/dataset"
 )
 
 // refreshWorker queries the given zpool for datasets and sets the dataset parameters to metrics
@@ -21,32 +22,41 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 			if sleepCounter/int(app.interval.Seconds()) == 0 {
 				break
 			}
-			datasets := dataset.DetectDatasets(pool)
-			st := time.Now()
-			for _, ds := range datasets {
+			startTime := time.Now() // begin time measurement
+
+			wg := sync.WaitGroup{}
+			for _, dataset := range dsi.DetectDatasets(pool) { // loop through datasets
 				// apply query filter
-				if app.poolFilter.MatchString(ds.Name) == app.reverseFilter {
+				if app.poolFilter.MatchString(dataset.Name) == app.reverseFilter {
 					continue
 				}
-
-				// read parameter values
-				ds.ParseParameters()
-				for key, value := range ds.Parameter {
-					// assign parameters and values to corresponding metrics
-					zpoolStats.With(
-						prometheus.Labels{
-							MetricLabelDataset:   ds.Name,
-							MetricLabelPool:      pool,
-							MetricLabelParameter: key,
-						},
-					).Set(float64(value))
-				}
+				// start one assignment process per dataset
+				wg.Add(1)
+				go assignParametersToMetric(dataset, pool, &wg)
 			}
+			wg.Wait()
+
 			// add spent query time to corresponding metric
-			queryTime.With(prometheus.Labels{MetricLabelPool: pool}).Add(time.Since(st).Seconds())
+			metricExporterQueryDuration.With(prometheus.Labels{MetricLabelPool: pool}).Observe(time.Since(startTime).Seconds())
 			sleepCounter = 0
 		}
 		sleepCounter++
 		time.Sleep(time.Second)
+	}
+}
+
+// assignParametersToMetric - assign read parameter values to `metricZfsParameter` metric
+func assignParametersToMetric(dataset *dsi.Dataset, pool string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	dataset.ParseParameters() // read parameter values
+	for key, value := range dataset.Parameter {
+		// assign parameters and values to corresponding metrics
+		metricZfsParameter.With(
+			prometheus.Labels{
+				MetricLabelDataset:   dataset.Name,
+				MetricLabelPool:      pool,
+				MetricLabelParameter: key,
+			},
+		).Set(float64(value))
 	}
 }
