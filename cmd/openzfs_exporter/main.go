@@ -131,4 +131,6 @@ func main() {
 	if err := app.server.Shutdown(context.Background()); err != nil {
 		log.Println(err)
 	}
+
+	log.Println("exporter stopped")
 }
