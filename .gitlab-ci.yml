@@ -1,64 +1,24 @@
 ---
-stages: [build, test]
+image: golang:latest
+tags: [docker]
 
-.default: &DEFAULT
-  image: golang
-  tags: [docker]
-  before_script:
-    - "export GOPATH=$PWD/.go"
-    - "mkdir ci-build || true"
+stages:
+  - test
+  - build
 
-.build: &BUILD
-  <<: *DEFAULT
+format:
+  stage: test
+  script:
+    - go fmt $(go list ./... | grep -v /vendor/)
+    - go vet $(go list ./... | grep -v /vendor/)
+    - go test -race $(go list ./... | grep -v /vendor/)
+
+compile:
   stage: build
-  before_script:
-    - "export GOARCH=amd64"
   script:
-    - go build -a -ldflags "-extldflags '-static' -s -w" -o ci-build/pmacct_exporter-$GOOS
+    - mkdir -p binaries
+    - go build -o binaries ./...
   artifacts:
-    when: always
-    expire_in: 3d
     paths:
-      - ci-build
-
-# FreeBSD amd64
-build freebsd:amd64:
-  <<: *BUILD
-  before_script:
-    - "export GOOS=freebsd"
-
-# Linux amd64
-build linux:amd64:
-  <<: *BUILD
-  before_script:
-    - "export GOOS=linux"
-
-lint:
-  <<: *DEFAULT
-  stage: test
-  script:
-    - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b /go/bin
-    - bash -c "diff -u <(echo -n) <(go fmt ./...)"
-    - golangci-lint run
-
-unit-test:
-  <<: *DEFAULT
-  stage: test
-  rules:
-  - if: '$CI_MERGE_REQUEST_ID'
-    when: never
-  - if: '$CI_COMMIT_TAG'
-    when: never
-  - if: '$CI_COMMIT_REF_NAME =~ /^version_bump$/'
-    when: never
-  - when: always
-  script:
-    - mkdir -p coverage
-    - go test -run "^Test[^_]" -v ./... -coverprofile=coverage/coverage.out -covermode=atomic
-  artifacts:
-    when: always
-    expire_in: 3d
-    paths:
-      - coverage
-      - ci-logs
+      - binaries
 
