@@ -3,7 +3,7 @@ stages: [build, test]
 
 .default: &DEFAULT
   image: golang
-  tags: [cluster]
+  tags: [docker]
   before_script:
     - "export GOPATH=$PWD/.go"
     - "mkdir ci-build || true"
