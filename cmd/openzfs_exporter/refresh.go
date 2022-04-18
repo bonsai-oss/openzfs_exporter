@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"log"
+	"strconv"
 	"sync"
 	"time"
 
@@ -24,13 +26,14 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 			}
 			startTime := time.Now() // begin time measurement
 
+			datasets, err := dsi.DetectDatasets(pool)
+			if err != nil {
+				log.Println(err)
+				break
+			}
+
 			wg := sync.WaitGroup{}
-			for _, dataset := range dsi.DetectDatasets(pool) { // loop through datasets
-				// apply query filter
-				if app.poolFilter.MatchString(dataset.Name) == app.reverseFilter {
-					continue
-				}
-				// start one assignment process per dataset
+			for _, dataset := range datasets {
 				wg.Add(1)
 				go assignParametersToMetric(dataset, pool, &wg)
 			}
@@ -48,15 +51,17 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 // assignParametersToMetric - assign read parameter values to `metricZfsParameter` metric
 func assignParametersToMetric(dataset *dsi.Dataset, pool string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	dataset.ParseParameters() // read parameter values
 	for key, value := range dataset.Parameter {
-		// assign parameters and values to corresponding metrics
+		valueParsed, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			log.Println(err)
+		}
 		metricZfsParameter.With(
 			prometheus.Labels{
 				MetricLabelDataset:   dataset.Name,
 				MetricLabelPool:      pool,
 				MetricLabelParameter: key,
 			},
-		).Set(float64(value))
+		).Set(valueParsed)
 	}
 }

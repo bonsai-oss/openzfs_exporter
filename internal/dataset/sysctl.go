@@ -1,63 +1,64 @@
 package dataset
 
 import (
-	"log"
 	"os/exec"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
 const (
 	SYSCTL = "/sbin/sysctl"
+
+	Parameter = "Parameter"
+	Object    = "Object"
+	Value     = "Value"
+	Name      = "Name"
 )
 
-func (ds *Dataset) getStringValue(key string) (string, error) {
-	key = strings.Join(append(ds.ObjectPath, key), ".")
-	out, err := exec.Command(SYSCTL, "-nq", key).Output()
+func DetectDatasets(pool string) (datasets []*Dataset, err error) {
+	out, err := exec.Command(SYSCTL, "kstat.zfs."+pool).Output()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return strings.TrimSuffix(string(out), "\n"), nil
+
+	for _, bla := range findObjectDetails(string(out)) {
+		datasets = append(datasets, bla)
+	}
+	return datasets, nil
 }
 
-func (ds *Dataset) getUint64Value(key string) (uint64, error) {
-	rawValue, err := ds.getStringValue(key)
-	if err != nil {
-		return 0, err
-	}
-	number, err := strconv.ParseUint(rawValue, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return number, nil
-}
+func findObjectDetails(input string) map[string]*Dataset {
+	matcher := regexp.MustCompile(`^kstat\.zfs\.\w*\.dataset.objset-(?P<Object>\w*).((?P<Parameter>\w*): (?P<Value>\d*)|dataset_name: (?P<Name>(\w*(/)?)+))$`)
+	list := make(map[string]*Dataset)
 
-func (ds *Dataset) ParseParameters() {
-	for _, field := range fields {
-		ds.Mutex.Lock()
-		ds.Parameter[field], _ = ds.getUint64Value(field)
-		ds.Mutex.Unlock()
-	}
-}
-
-func DetectDatasets(pool string) []*Dataset {
-	validator := regexp.MustCompile(`^kstat\.zfs\.\w*\.dataset\.objset-\w*\.dataset_name:\s\S*`)
-	var outList []*Dataset
-	out, err := exec.Command(SYSCTL, "-it", "kstat.zfs."+pool).Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	lines := strings.Split(string(out), "\n")
-	for _, line := range lines {
-		if !validator.MatchString(line) {
+	for _, line := range strings.Split(input, "\n") {
+		matchGroupContent := matcher.FindStringSubmatch(line)
+		// skip if regex is not matching
+		if matchGroupContent == nil {
 			continue
 		}
-		parts := strings.Split(line, ".")
-		ds := Dataset{ObjectID: parts[4], ObjectPath: parts[:5]}
-		ds.Name, _ = ds.getStringValue("dataset_name")
-		ds.Parameter = make(map[string]uint64)
-		outList = append(outList, &ds)
+		object := matchGroupContent[matcher.SubexpIndex(Object)]
+		datasetName := matchGroupContent[matcher.SubexpIndex(Name)]
+		parameter := matchGroupContent[matcher.SubexpIndex(Parameter)]
+		value := matchGroupContent[matcher.SubexpIndex(Value)]
+
+		// initialize object list entry if not already existing
+		if list[object] == nil {
+			list[object] = &Dataset{
+				ObjectID:  object,
+				Parameter: make(map[string]string),
+			}
+		}
+
+		// assign dataset name
+		if datasetName != "" {
+			list[object].Name = datasetName
+			continue // cancel if dataset name is found. No need for further parameter/value checking
+		}
+		// assign parameters/values to dataset of not empty
+		if value != "" && parameter != "" {
+			list[object].Parameter[parameter] = value
+		}
 	}
-	return outList
+	return list
 }
