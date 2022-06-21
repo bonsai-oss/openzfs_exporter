@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
+	dsi "github.com/fsrv-xyz/openzfs_exporter/internal/dataset"
 	"github.com/prometheus/client_golang/prometheus"
-	dsi "golang.fsrv.services/openzfs_exporter/internal/dataset"
 )
 
 // refreshWorker queries the given zpool for datasets and sets the dataset parameters to metrics

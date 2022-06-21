@@ -11,9 +11,9 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/fsrv-xyz/openzfs_exporter/internal/pool"
+	"github.com/fsrv-xyz/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.fsrv.services/openzfs_exporter/internal/pool"
-	"golang.fsrv.services/version"
 )
 
 // webListener - web server to access the metrics
