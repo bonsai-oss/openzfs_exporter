@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"syscall"
 	"time"
 
 	"github.com/fsrv-xyz/openzfs_exporter/internal/pool"
@@ -52,7 +53,7 @@ func init() {
 	flag.DurationVar(&app.interval, "interval", 5*time.Second, "refresh interval for metrics")
 	flag.StringVar(&app.listenAddress, "web.listen-address", ":8080", "address listening on")
 	flag.BoolVar(&app.useAutodiscovery, "discover-pools", false, "use autodiscovery for zfs pools")
-	flag.Var(&app.exportedPools, "exported-pools", "address listening on")
+	flag.Var(&app.exportedPools, "exported-pools", "list of pools to export metrics for")
 
 	flag.StringVar(&poolMatchRaw, "filter", `^.*$`, "filter queried datasets")
 	flag.BoolVar(&app.reverseFilter, "filter-reverse", false, "reverse filter functionality; if set, only not matching datasets would be exported")
@@ -97,7 +98,7 @@ func init() {
 func main() {
 	// capture input signals
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	ctx, cancelWorkers := context.WithCancel(context.Background())
 	done := make(chan interface{})
