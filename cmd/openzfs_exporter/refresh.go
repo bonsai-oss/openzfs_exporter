@@ -34,6 +34,9 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 
 			wg := sync.WaitGroup{}
 			for _, dataset := range datasets {
+				if app.poolFilter.MatchString(dataset.Name) == app.reverseFilter {
+					continue
+				}
 				wg.Add(1)
 				go assignParametersToMetric(dataset, pool, &wg)
 			}

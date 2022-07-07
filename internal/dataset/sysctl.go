@@ -21,8 +21,8 @@ func DetectDatasets(pool string) (datasets []*Dataset, err error) {
 		return nil, err
 	}
 
-	for _, bla := range findObjectDetails(string(out)) {
-		datasets = append(datasets, bla)
+	for _, dataSetDetail := range findObjectDetails(string(out)) {
+		datasets = append(datasets, dataSetDetail)
 	}
 	return datasets, nil
 }
