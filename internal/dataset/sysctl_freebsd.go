@@ -12,10 +12,10 @@ import (
 const (
 	SYSCTL = "/sbin/sysctl"
 
-	Parameter = "Parameter"
-	Object    = "Object"
-	Value     = "Value"
-	Name      = "Name"
+	matchGroupParameter = "Parameter"
+	matchGroupObject    = "Object"
+	matchGroupValue     = "Value"
+	matchGroupName      = "Name"
 )
 
 func DetectDatasets(pool string) (datasets []*Dataset, err error) {
@@ -30,8 +30,9 @@ func DetectDatasets(pool string) (datasets []*Dataset, err error) {
 	return datasets, nil
 }
 
+var matcher = regexp.MustCompile(`^kstat\.zfs\.\w*\.dataset.objset-(?P<Object>\w*).((?P<Parameter>\w*): (?P<Value>\d*)|dataset_name: (?P<Name>(\w*(/)?)+))$`)
+
 func findObjectDetails(input string) map[string]*Dataset {
-	matcher := regexp.MustCompile(`^kstat\.zfs\.\w*\.dataset.objset-(?P<Object>\w*).((?P<Parameter>\w*): (?P<Value>\d*)|dataset_name: (?P<Name>(\w*(/)?)+))$`)
 	list := make(map[string]*Dataset)
 
 	for _, line := range strings.Split(input, "\n") {
@@ -40,10 +41,10 @@ func findObjectDetails(input string) map[string]*Dataset {
 		if matchGroupContent == nil {
 			continue
 		}
-		object := matchGroupContent[matcher.SubexpIndex(Object)]
-		datasetName := matchGroupContent[matcher.SubexpIndex(Name)]
-		parameter := matchGroupContent[matcher.SubexpIndex(Parameter)]
-		value := matchGroupContent[matcher.SubexpIndex(Value)]
+		object := matchGroupContent[matcher.SubexpIndex(matchGroupObject)]
+		datasetName := matchGroupContent[matcher.SubexpIndex(matchGroupName)]
+		parameter := matchGroupContent[matcher.SubexpIndex(matchGroupParameter)]
+		value := matchGroupContent[matcher.SubexpIndex(matchGroupValue)]
 
 		// initialize object list entry if not already existing
 		if list[object] == nil {

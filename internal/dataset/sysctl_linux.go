@@ -26,28 +26,35 @@ func DetectDatasets(pool string) (datasets []*Dataset, err error) {
 		if !strings.HasPrefix(info.Name(), objsetPrefix) {
 			return nil
 		}
-		content, _ := os.ReadFile(path)
+		content, fileReadError := os.ReadFile(path)
+		if fileReadError != nil {
+			return nil
+		}
 		ds := &Dataset{
 			ObjectID:  strings.TrimPrefix(info.Name(), objsetPrefix),
 			Parameter: make(map[string]string),
 		}
-		for _, line := range strings.Split(string(content), "\n") {
-			matchGroupContent := matcher.FindStringSubmatch(line)
-			// skip if regex is not matching
-			if matchGroupContent == nil {
-				continue
-			}
-			key := matchGroupContent[matcher.SubexpIndex(matchGroupKey)]
-			value := matchGroupContent[matcher.SubexpIndex(matchGroupValue)]
-			name := matchGroupContent[matcher.SubexpIndex(matchGroupName)]
-
-			if name != "" {
-				ds.Name = name
-				continue // cancel if dataset name is found. No need for further parameter/value checking
-			}
-			ds.Parameter[key] = value
-		}
+		parseDatasetValues(ds, content)
 		datasets = append(datasets, ds)
 		return nil
 	})
+}
+
+func parseDatasetValues(ds *Dataset, content []byte) {
+	for _, line := range strings.Split(string(content), "\n") {
+		matchGroupContent := matcher.FindStringSubmatch(line)
+		// skip if regex is not matching
+		if matchGroupContent == nil {
+			continue
+		}
+		key := matchGroupContent[matcher.SubexpIndex(matchGroupKey)]
+		value := matchGroupContent[matcher.SubexpIndex(matchGroupValue)]
+		name := matchGroupContent[matcher.SubexpIndex(matchGroupName)]
+
+		if name != "" {
+			ds.Name = name
+			continue // cancel if dataset name is found. No need for further parameter/value checking
+		}
+		ds.Parameter[key] = value
+	}
 }
