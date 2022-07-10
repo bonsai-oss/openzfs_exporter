@@ -17,7 +17,12 @@ compile:
   stage: build
   script:
     - mkdir -p binaries
-    - go build -o binaries ./...
+    - go build -o binaries/openzfs_exporter-$(uname -s) ./cmd/openzfs_exporter/*.go
+  parallel:
+    matrix:
+      - GOOS:
+          - linux
+          - freebsd
   artifacts:
     paths:
       - binaries
