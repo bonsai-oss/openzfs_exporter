@@ -1,0 +1,63 @@
+#!/bin/sh
+
+# PROVIDE: openzfs_exporter
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+#
+# Add the following lines to /etc/rc.conf.local or /etc/rc.conf
+# to enable this service:
+#
+# openzfs_exporter_enable (bool):          Set to NO by default.
+#               Set it to YES to enable openzfs_exporter.
+# openzfs_exporter_user (string):          Set user that openzfs_exporter will run under
+#               Default is "nobody".
+# openzfs_exporter_group (string):         Set group that openzfs_exporter will run under
+#               Default is "nobody".
+# openzfs_exporter_args (string):          Set extra arguments to pass to openzfs_exporter
+#               Default is "".
+# openzfs_exporter_addr (string):          Network host to listen on.
+#               Default is "0.0.0.0".
+
+. /etc/rc.subr
+
+name=openzfs_exporter
+rcvar=openzfs_exporter_enable
+
+load_rc_config $name
+
+: ${openzfs_exporter_enable:="NO"}
+: ${openzfs_exporter_user:="nobody"}
+: ${openzfs_exporter_group:="nobody"}
+: ${openzfs_exporter_args:=""}
+: ${openzfs_exporter_env:=""}
+: ${openzfs_exporter_address:="127.0.0.1:9921"}
+: ${openzfs_exporter_interval:="5s"}
+: ${openzfs_exporter_discovery:="true"}
+
+
+pidfile=/var/run/openzfs_exporter.pid
+command="/usr/sbin/daemon"
+procname="/usr/local/bin/openzfs_exporter"
+
+if [ "x${openzfs_exporter_discovery}" = "xtrue" ]; then
+  openzfs_exporter_args="${openzfs_exporter_args} -discover-pools"
+fi
+
+command_args="-f -p ${pidfile} -T ${name} \
+    /usr/bin/env ${openzfs_exporter_env} ${procname} \
+    -web.listen-address=${openzfs_exporter_address} \
+    -interval=${openzfs_exporter_interval} \
+    ${openzfs_exporter_args}"
+
+start_precmd=openzfs_exporter_startprecmd
+openzfs_exporter_startprecmd()
+{
+    if [ ! -e ${pidfile} ]; then
+        install -o ${openzfs_exporter_user} -g ${openzfs_exporter_group} /dev/null ${pidfile};
+    else
+        chown ${openzfs_exporter_user}:${openzfs_exporter_group} ${pidfile};
+    fi
+}
+
+load_rc_config $name
+run_rc_command "$1"
