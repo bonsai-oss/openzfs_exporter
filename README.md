@@ -1,6 +1,6 @@
 # openzfs_exporter
 
-This is a Prometheus exporter for OpenZFS metrics on FreeBSD.
+This is a Prometheus exporter for OpenZFS metrics on FreeBSD and Linux.
 
 ## usage
 
