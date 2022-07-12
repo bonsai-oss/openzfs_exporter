@@ -1,0 +1,8 @@
+builds:
+  - binary: openzfs_exporter
+    goos:
+      - linux
+      - freebsd
+    goarch:
+      - amd64
+      - arm64
