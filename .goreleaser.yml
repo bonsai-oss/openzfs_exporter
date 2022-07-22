@@ -6,3 +6,7 @@ builds:
     goarch:
       - amd64
       - arm64
+    dir: .
+    main: ./cmd/openzfs_exporter/
+    env:
+      - CGO_ENABLED=0
