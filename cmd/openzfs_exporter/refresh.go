@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	dsi "github.com/fsrv-xyz/openzfs_exporter/internal/dataset"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/bonsai-oss/openzfs_exporter/internal/dataset"
 )
 
 // refreshWorker queries the given zpool for datasets and sets the dataset parameters to metrics
@@ -26,19 +27,19 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 			}
 			startTime := time.Now() // begin time measurement
 
-			datasets, err := dsi.DetectDatasets(pool)
+			datasets, err := dataset.DetectDatasets(pool)
 			if err != nil {
 				log.Println(err)
 				break
 			}
 
 			wg := sync.WaitGroup{}
-			for _, dataset := range datasets {
-				if app.poolFilter.MatchString(dataset.Name) == app.reverseFilter {
+			for _, ds := range datasets {
+				if app.poolFilter.MatchString(ds.Name) == app.reverseFilter {
 					continue
 				}
 				wg.Add(1)
-				go assignParametersToMetric(dataset, pool, &wg)
+				go assignParametersToMetric(ds, pool, &wg)
 			}
 			wg.Wait()
 
@@ -52,16 +53,16 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 }
 
 // assignParametersToMetric - assign read parameter values to `metricZfsParameter` metric
-func assignParametersToMetric(dataset *dsi.Dataset, pool string, wg *sync.WaitGroup) {
+func assignParametersToMetric(ds *dataset.Dataset, pool string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	for key, value := range dataset.Parameter {
+	for key, value := range ds.Parameter {
 		valueParsed, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			log.Println(err)
 		}
 		metricZfsParameter.With(
 			prometheus.Labels{
-				MetricLabelDataset:   dataset.Name,
+				MetricLabelDataset:   ds.Name,
 				MetricLabelPool:      pool,
 				MetricLabelParameter: key,
 			},

@@ -12,9 +12,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fsrv-xyz/openzfs_exporter/internal/pool"
 	"github.com/fsrv-xyz/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/bonsai-oss/openzfs_exporter/internal/pool"
 )
 
 // webListener - web server to access the metrics
