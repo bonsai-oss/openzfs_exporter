@@ -5,6 +5,7 @@ default:
 stages:
   - test
   - build
+  - release
 
 format:
   stage: test
@@ -27,3 +28,16 @@ compile:
     paths:
       - binaries
 
+semantic_release:
+  stage: release
+  image: registry.fsrv.services/fsrvcorp/container/payipi:latest
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - get-next-version -f json
+    - VERSION="$(get-next-version -f json | jq -r 'select(.hasNextVersion==true) | .version')"
+    - echo $VERSION
+    - test -z "$VERSION" || curl --silent --request POST --header "PRIVATE-TOKEN:${CI_BOT_TOKEN}" "https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/repository/tags?tag_name=${VERSION}&ref=${CI_DEFAULT_BRANCH}" | jq
