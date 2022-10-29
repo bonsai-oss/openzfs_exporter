@@ -40,4 +40,4 @@ semantic_release:
     - get-next-version -f json
     - VERSION="$(get-next-version -f json | jq -r 'select(.hasNextVersion==true) | .version')"
     - echo $VERSION
-    - test -z "$VERSION" || curl --silent --request POST --header "PRIVATE-TOKEN:${CI_BOT_TOKEN}" "https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/repository/tags?tag_name=${VERSION}&ref=${CI_DEFAULT_BRANCH}" | jq
+    - test -z "$VERSION" || curl --silent --request POST --header "PRIVATE-TOKEN:${CI_BOT_TOKEN}" "https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/repository/tags?tag_name=v${VERSION}&ref=${CI_DEFAULT_BRANCH}" | jq
