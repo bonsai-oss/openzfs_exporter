@@ -14,6 +14,8 @@ import (
 
 // refreshWorker queries the given zpool for datasets and sets the dataset parameters to metrics
 func (app *application) refreshWorker(ctx context.Context, done chan<- interface{}, pool string) {
+	// initialize a new dataset list for determining the difference between the previous and current dataset list
+	datasetCache := make(map[string]bool)
 	var sleepCounter int
 	for {
 		select {
@@ -31,6 +33,23 @@ func (app *application) refreshWorker(ctx context.Context, done chan<- interface
 			if err != nil {
 				log.Println(err)
 				break
+			}
+
+			/*
+				The following code block checks if all previous detected datasets are still existing.
+				If the dataset is not existing anymore, the metrics related to it is deleted.
+			*/
+			for item := range datasetCache {
+				datasetCache[item] = false
+			}
+			for _, ds := range datasets {
+				datasetCache[ds.Name] = true
+			}
+			for item := range datasetCache {
+				if !datasetCache[item] {
+					metricZfsParameter.DeletePartialMatch(prometheus.Labels{MetricLabelPool: pool, MetricLabelDataset: item})
+					delete(datasetCache, item)
+				}
 			}
 
 			wg := sync.WaitGroup{}
