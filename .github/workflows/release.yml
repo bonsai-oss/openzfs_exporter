@@ -38,7 +38,7 @@ jobs:
       GOARCH: ${{ matrix.goarch }}
     strategy:
       matrix:
-        goos: [linux, darwin, freebsd]
+        goos: [linux, freebsd]
         goarch: [amd64, arm64]
     steps:
       - name: Checkout
