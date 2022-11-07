@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/fsrv-xyz/version v0.0.1
-	github.com/prometheus/client_golang v1.13.0
+	github.com/prometheus/client_golang v1.13.1
 )
 
 require (
