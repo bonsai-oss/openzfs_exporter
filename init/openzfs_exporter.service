@@ -1,10 +1,10 @@
 [Unit]
 Description=Prometheus exporter for OpenZFS metrics
-Documentation=https://github.com/fsrv-xyz/openzfs_exporter
+Documentation=https://github.com/bonsai-oss/openzfs_exporter
 
 [Service]
 Restart=on-failure
-User=prometheus
+User=nobody
 EnvironmentFile=/etc/default/openzfs-exporter
 ExecStart=/usr/bin/openzfs-exporter -discover-pools $ARGS
 ExecReload=/bin/kill -HUP $MAINPID
