@@ -43,11 +43,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - run: go build -o openzfs_exporter -ldflags="-s -w \
-          -X github.com/fsrv-xyz/version.Version=${VERSION} \
-          -X github.com/fsrv-xyz/version.BuildUser=$(whoami)@$(uname --nodename) \
-          -X github.com/fsrv-xyz/version.BuildDate=$(date +%d-%B-%Y) \
-          " -trimpath ./cmd/openzfs_exporter
+      - name: Build
+        run: go build -o openzfs_exporter -ldflags="-s -w -X github.com/fsrv-xyz/version.Version=${VERSION} -X github.com/fsrv-xyz/version.BuildUser=$(whoami)@$(uname --nodename) -X github.com/fsrv-xyz/version.BuildDate=$(date +%d-%B-%Y)" -trimpath ./cmd/openzfs_exporter
       - run: tar -czf openzfs_exporter_${{ needs.create_release.outputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}.tar.gz openzfs_exporter LICENSE README.md
       - name: Upload Release Asset
         id: upload-release-asset
@@ -77,11 +74,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - run: apt update && apt install -y binutils-aarch64-linux-gnu
-      - run: go build -o openzfs-exporter -ldflags="-s -w \
-              -X github.com/fsrv-xyz/version.Version=${VERSION} \
-              -X github.com/fsrv-xyz/version.BuildUser=$(whoami)@$(uname --nodename) \
-              -X github.com/fsrv-xyz/version.BuildDate=$(date +%d-%B-%Y) \
-              " -trimpath ./cmd/openzfs_exporter
+      - name: Build
+        run: go build -o openzfs-exporter -ldflags="-s -w -X github.com/fsrv-xyz/version.Version=${VERSION} -X github.com/fsrv-xyz/version.BuildUser=$(whoami)@$(uname --nodename) -X github.com/fsrv-xyz/version.BuildDate=$(date +%d-%B-%Y)" -trimpath ./cmd/openzfs_exporter
       - name: replace template variables
         run: |
           export VERSION=${{ needs.create_release.outputs.version }}
