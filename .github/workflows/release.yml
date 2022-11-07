@@ -10,7 +10,6 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       version: ${{ steps.version.outputs.package_version }}
-    env:
     steps:
       - name: filter version variable
         id: version
