@@ -42,7 +42,7 @@ jobs:
         goarch: [amd64, arm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Build
         run: go build -o openzfs_exporter -ldflags="-s -w -X github.com/fsrv-xyz/version.Version=${VERSION} -X github.com/fsrv-xyz/version.BuildUser=$(whoami)@$(uname --nodename) -X github.com/fsrv-xyz/version.BuildDate=$(date +%d-%B-%Y)" -trimpath ./cmd/openzfs_exporter
       - run: tar -czf openzfs_exporter_${{ needs.create_release.outputs.version }}_${{ matrix.goos }}_${{ matrix.goarch }}.tar.gz openzfs_exporter LICENSE README.md
@@ -72,7 +72,7 @@ jobs:
         goarch: [amd64, arm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - run: apt update && apt install -y binutils-aarch64-linux-gnu
       - name: Build
         run: go build -o openzfs-exporter -ldflags="-s -w -X github.com/fsrv-xyz/version.Version=${VERSION} -X github.com/fsrv-xyz/version.BuildUser=$(whoami)@$(uname --nodename) -X github.com/fsrv-xyz/version.BuildDate=$(date +%d-%B-%Y)" -trimpath ./cmd/openzfs_exporter
