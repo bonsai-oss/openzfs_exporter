@@ -17,7 +17,7 @@ include:
 
 compile:
   stage: build
-  image: golang:1.20.4-bullseye
+  image: golang:1.20.6-bullseye
   script:
     - mkdir -p binaries
     - go build -o binaries/openzfs_exporter-$(uname -s) ./cmd/openzfs_exporter/*.go
