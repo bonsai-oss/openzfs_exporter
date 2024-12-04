@@ -17,7 +17,7 @@ include:
 
 compile:
   stage: build
-  image: golang:1.22.3
+  image: golang:1.23.4
   script:
     - mkdir -p binaries
     - go build -o binaries/openzfs_exporter-$(uname -s) ./cmd/openzfs_exporter/*.go
