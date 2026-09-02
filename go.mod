@@ -1,8 +1,6 @@
 module github.com/bonsai-oss/openzfs_exporter
 
-go 1.22
-
-toolchain go1.24.4
+go 1.27.1
 
 require (
 	github.com/fsrv-xyz/version v0.0.1
